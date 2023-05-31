@@ -1,14 +1,11 @@
 // auth: propagate
 // 5/24/22
 
-extern crate systemstat;
-extern crate colored;
-
-use crate::systemstat::System;
-use crate::systemstat::Platform;
-use crate::systemstat::saturating_sub_bytes;
-
+#[allow(unused_imports)]
+#[allow(unused_variables)]
 use colored::Colorize;
+use sysinfo::{System, SystemExt, CpuExt, ComponentExt};
+use std::option::Option;
 
 fn main() {
     if cfg!(windows){
@@ -18,14 +15,25 @@ fn main() {
         std::process::exit(0x0100);
     }
     
-    let sys = System::new();
+    let mut sys = System::new_all();
+    sys.refresh_all();
 
-    print!("{} {}", "Operating System:".white(), "⊞".blue());
+    println!("{} {}", "Operating System:".white(), "⊞".blue());
 
-    match sys.memory() {
-        Ok(mem) => print!("\nMemory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
-        Err(x) => println!("\nMemory: error: {}", x)
+    let used_mem = sys.used_memory() / 1000000000;
+    let total_mem = sys.total_memory() / 1000000000;
+
+    println!("{} {:?}GB / {:?}GB", "RAM:", used_mem, total_mem);
+
+    for cpu in sys.cpus() {
+        print!("{:?} {:?} | {:?}%", cpu.brand(), cpu.name(), cpu.cpu_usage()); 
     }
+
+    for component in sys.components() {
+        print!(" TEMP: {}°C", component.temperature());
+    }
+
+    
 
 }
 
